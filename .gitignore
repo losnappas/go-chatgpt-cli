@@ -1,0 +1,5 @@
+.direnv
+.aider*
+chathistory.md
+/chatgpt_cli
+/result
