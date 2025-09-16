@@ -6,24 +6,45 @@ import (
 )
 
 func runCase(str string) {
-	rend, _ := NewPrinter()
-	re := regexp.MustCompile(`\s`)
+	rend, err := NewPrinter()
+	if err != nil {
+		panic(err)
+	}
+	defer rend.Close()
+	re := regexp.MustCompile(`\s+`)
 
 	parts := re.Split(str, -1)
 	separators := re.FindAllString(str, -1)
 
 	var result []string
 	for i, p := range parts {
-		if p != "" {
-			result = append(result, p)
-		}
+		var sep string
 		if i < len(separators) {
-			result = append(result, separators[i])
+			sep = separators[i]
 		}
+		if p != "" {
+			result = append(result, p+sep)
+		}
+		// if i < len(separators) {
+		// result = append(result, fmt.Sprintf("'%v'", separators[i]))
+		// }
 	}
+	var prev string
 	for _, s := range result {
+		if prev == s {
+			continue
+		}
+		// fmt.Println(s)
 		rend.Print(s)
+		prev = s
 	}
+}
+
+func TestPrint0(t *testing.T) {
+	str := `testingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtestingtesting
+
+random words! `
+	runCase(str)
 }
 
 func TestPrint(t *testing.T) {
@@ -36,8 +57,7 @@ For longer outputs, approaches include:
 
 No widely available model today can *natively* generate arbitrarily long, coherent video without degradation or manual stitching.
 
-Would you like me to list some of the most promising open-source projects you could experiment with for extended-length video?
-`
+Would you like me to list some of the most promising open-source projects you could experiment with for extended-length video?`
 	runCase(str)
 }
 

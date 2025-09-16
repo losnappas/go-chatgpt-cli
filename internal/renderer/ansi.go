@@ -1,64 +1,62 @@
 package renderer
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/glamour/ansi"
-	styles "github.com/charmbracelet/glamour/styles"
-	"github.com/muesli/termenv"
 	"golang.org/x/term"
 )
 
 type Printer interface {
 	Print(string)
+	Close()
 }
 
 type Ansi struct {
 	renderer *glamour.TermRenderer
 	current  string
+	writer   *bufio.Writer
+	viewport *tea.Program
 }
 
 type Plain struct {
-}
-
-func NewPrinter() (Printer, error) {
-	if !term.IsTerminal(int(os.Stdout.Fd())) {
-		return &Plain{}, nil
-	}
-
-	style, err := getDefaultStyle("auto")
-	if err != nil {
-		return nil, err
-	}
-	// Removes margin and empty lines before/after.
-	style.Document = ansi.StyleBlock{}
-	r, err := glamour.NewTermRenderer(
-		glamour.WithStyles(*style),
-		// Makes copy pasting the response more pleasant.
-		glamour.WithWordWrap(0),
-	)
-	if err != nil {
-		return nil, err
-	}
-	// Save cursor position with both legacy and CSI variants
-	fmt.Print("\x1b7\x1b[s")
-	return &Ansi{
-		renderer: r,
-		current:  "",
-	}, nil
 }
 
 func (r *Plain) Print(s string) {
 	fmt.Print(s)
 }
 
-// clearPrevious erases the previously rendered block from the terminal.
-func (r *Ansi) clearPrevious() {
-	// Restore saved cursor position (use both legacy ESC7/ESC8 and CSI s/u for broader support)
-	// Then clear to end of screen so all previously printed content is removed.
-	fmt.Print("\x1b8\x1b[u\x1b[J")
+func (r *Plain) Close() {}
+
+func NewPrinter() (Printer, error) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		return &Plain{}, nil
+	}
+
+	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
+	r, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(width),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	p := tea.NewProgram(newViewport())
+	go p.Run()
+	return &Ansi{
+		renderer: r,
+		current:  "",
+		viewport: p,
+	}, nil
+}
+
+func (r *Ansi) Close() {
+	r.viewport.Quit()
+	r.viewport.Wait()
 }
 
 func (r *Ansi) Print(text string) {
@@ -66,29 +64,7 @@ func (r *Ansi) Print(text string) {
 	r.current += text
 	out, err := r.renderer.Render(r.current)
 	if err != nil {
-		return
+		panic(err)
 	}
-
-	r.clearPrevious()
-
-	fmt.Print(out)
-}
-
-// getDefaultStyle is copy paste from glamour package.
-func getDefaultStyle(style string) (*ansi.StyleConfig, error) {
-	if style == styles.AutoStyle {
-		if !term.IsTerminal(int(os.Stdout.Fd())) {
-			return &styles.NoTTYStyleConfig, nil
-		}
-		if termenv.HasDarkBackground() {
-			return &styles.DarkStyleConfig, nil
-		}
-		return &styles.LightStyleConfig, nil
-	}
-
-	styles, ok := styles.DefaultStyles[style]
-	if !ok {
-		return nil, fmt.Errorf("%s: style not found", style)
-	}
-	return styles, nil
+	r.viewport.Send(newContent{out})
 }
