@@ -10,10 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/losnappas/go-chatgpt-cli/internal/conversation"
 	"github.com/losnappas/go-chatgpt-cli/internal/history"
@@ -22,57 +20,15 @@ import (
 )
 
 var (
-	model       = flag.String("model", "openai/o3-mini", "The provider/model to use")
+	model       = flag.String("model", "openai/gpt-5-chat-latest", "The provider/model to use")
 	apiKey      = flag.String("api-key", "", "The API key to use, as provider=api_key")
-	historyFile = flag.String("history-file", "", "Read chat history from markdown file")
+	historyFile = flag.String("history-file", "", "Required. Read chat history from markdown file")
 	clear       = flag.Bool("c", false, "Clear history")
 	editor      = flag.Bool("editor", false, "Open history with $EDITOR")
 	system      = flag.String("system-prompt", "", "The LLM system prompt. Overridden by history file")
 )
 
-func runCase(str string) {
-	rend, err := renderer.NewPrinter()
-	if err != nil {
-		panic(err)
-	}
-	defer rend.Close()
-	re := regexp.MustCompile(`\s+`)
-
-	parts := re.Split(str, -1)
-	separators := re.FindAllString(str, -1)
-
-	var result []string
-	for i, p := range parts {
-		var sep string
-		if i < len(separators) {
-			sep = separators[i]
-		}
-		if p != "" {
-			result = append(result, p+sep)
-		}
-	}
-	for _, s := range result {
-		rend.Print(s)
-		time.Sleep(time.Millisecond * 100)
-	}
-}
-
 func main() {
-	str := `Truly arbitrary-length video generation remains an open challenge. Current video models (e.g., OpenAI Sora, Pika, Runway Gen-2, Stability AI’s Stable Video Diffusion) typically produce short clips (a few seconds to under a minute).
-
-For longer outputs, approaches include:
-- **Looping or chaining clips** (sequential generation with temporal alignment).
-- **Training recurrent/streaming transformer-based models** that can extend outputs, though stability degrades over time.
-- **Research directions**: latent diffusion with temporal consistency modules and autoregressive frame prediction to enable longer continuities.
-
-No widely available model today can *natively* generate arbitrarily long, coherent video without degradation or manual stitching.
-
-Would you like me to list some of the most promising open-source projects you could experiment with for extended-length video?`
-	runCase(str)
-	// main2()
-}
-
-func main2() {
 	ctx := context.Background()
 	flag.Parse()
 	err := run(ctx)
@@ -82,6 +38,9 @@ func main2() {
 }
 
 func run(ctx context.Context) error {
+	if *historyFile == "" {
+		return errors.New("history-file is a required argument")
+	}
 	if *clear {
 		os.Remove(*historyFile)
 	}

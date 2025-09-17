@@ -1,8 +1,5 @@
 package renderer
 
-// An example program demonstrating the pager component from the Bubbles
-// component library.
-
 import (
 	"strings"
 
@@ -15,8 +12,7 @@ type newContent struct {
 }
 
 type model struct {
-	viewport      viewport.Model
-	height, width int
+	viewport viewport.Model
 }
 
 func (m model) Init() tea.Cmd {
