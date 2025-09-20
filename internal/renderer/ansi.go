@@ -1,12 +1,13 @@
 package renderer
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/glamour/ansi"
+	"github.com/charmbracelet/glamour/styles"
+	"github.com/muesli/termenv"
 	"golang.org/x/term"
 )
 
@@ -18,8 +19,9 @@ type Printer interface {
 type Ansi struct {
 	renderer *glamour.TermRenderer
 	current  string
-	writer   *bufio.Writer
-	viewport *tea.Program
+	started  bool
+	output   *termenv.Output
+	out      string
 }
 
 type Plain struct {
@@ -36,27 +38,25 @@ func NewPrinter() (Printer, error) {
 		return &Plain{}, nil
 	}
 
-	width, _, _ := term.GetSize(int(os.Stdout.Fd()))
+	output := termenv.DefaultOutput()
 	r, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(width),
+		glamour.WithStyles(getStyle(output.HasDarkBackground())),
+		glamour.WithWordWrap(0),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	p := tea.NewProgram(newViewport())
-	go p.Run()
 	return &Ansi{
 		renderer: r,
 		current:  "",
-		viewport: p,
+		output:   output,
 	}, nil
 }
 
 func (r *Ansi) Close() {
-	r.viewport.Quit()
-	r.viewport.Wait()
+	r.output.ExitAltScreen()
+	fmt.Print(r.out)
 }
 
 func (r *Ansi) Print(text string) {
@@ -66,5 +66,38 @@ func (r *Ansi) Print(text string) {
 	if err != nil {
 		panic(err)
 	}
-	r.viewport.Send(newContent{out})
+	if !r.started {
+		r.output.AltScreen()
+		r.output.SaveCursorPosition()
+		r.started = true
+	} else {
+		r.output.ClearScreen()
+		r.output.RestoreCursorPosition()
+	}
+	r.out = out
+	fmt.Print(out)
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func getStyle(dark bool) ansi.StyleConfig {
+	var s ansi.StyleConfig
+	if dark {
+		s = styles.DarkStyleConfig
+		s.Document = ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color: stringPtr("252"),
+			},
+		}
+	} else {
+		s = styles.LightStyleConfig
+		s.Document = ansi.StyleBlock{
+			StylePrimitive: ansi.StylePrimitive{
+				Color: stringPtr("234"),
+			},
+		}
+	}
+	return s
 }
