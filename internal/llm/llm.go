@@ -46,6 +46,12 @@ func NewLlmClient(apiKey string, model string) (LlmClient, error) {
 			ClientOptions: defaultOptions,
 		}, nil
 
+	case "deepseek":
+		return &OpenaiClient{
+			ClientOptions: defaultOptions,
+			BaseURL:       "https://api.deepseek.com",
+		}, nil
+
 	case "google":
 		return &GoogleClient{
 			ClientOptions: defaultOptions,

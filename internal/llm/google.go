@@ -53,7 +53,9 @@ func (c *GoogleClient) Respond(
 	return outChan
 }
 
-func (c *GoogleClient) destructureConversation(convo *conversation.Conversation) (*genai.Content, []*genai.Content) {
+func (c *GoogleClient) destructureConversation(
+	convo *conversation.Conversation,
+) (*genai.Content, []*genai.Content) {
 	out := make([]*genai.Content, 0, len(convo.Messages))
 	var system *genai.Content
 

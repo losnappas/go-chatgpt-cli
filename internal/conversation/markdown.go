@@ -20,11 +20,31 @@ func (m *MarkdownParser) Parse(ctx context.Context, input io.Reader) (*Conversat
 	}
 	text := string(textB)
 
-	messages := m.messages(text)
+	model, content := m.parseFrontmatter(text)
+	messages := m.messages(content)
 
 	return &Conversation{
+		Model:    model,
 		Messages: messages,
 	}, nil
+}
+
+func (m *MarkdownParser) parseFrontmatter(text string) (string, string) {
+	parts := strings.SplitN(text, "---\n", 3)
+	if len(parts) < 3 {
+		return "", text
+	}
+
+	var model string
+	frontmatter := parts[1]
+	for line := range strings.SplitSeq(frontmatter, "\n") {
+		if after, ok := strings.CutPrefix(line, "model:"); ok {
+			model = strings.TrimSpace(after)
+		}
+	}
+	content := parts[2]
+
+	return model, strings.TrimSpace(content)
 }
 
 var roleRegexp = regexp.MustCompile("^# (User|Assistant|System)$")

@@ -10,6 +10,7 @@ import (
 
 type OpenaiClient struct {
 	ClientOptions
+	BaseURL string
 }
 
 func (c *OpenaiClient) Respond(
@@ -18,9 +19,14 @@ func (c *OpenaiClient) Respond(
 ) <-chan string {
 	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
 
-	client := openai.NewClient(
+	opts := []option.RequestOption{
 		option.WithAPIKey(c.ApiKey),
-	)
+	}
+	if c.BaseURL != "" {
+		opts = append(opts, option.WithBaseURL(c.BaseURL))
+	}
+
+	client := openai.NewClient(opts...)
 
 	stream := client.Chat.Completions.NewStreaming(
 		ctx,

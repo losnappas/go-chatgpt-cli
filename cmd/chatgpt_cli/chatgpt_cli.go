@@ -20,12 +20,20 @@ import (
 )
 
 var (
-	model       = flag.String("model", "openai/gpt-5-chat-latest", "The provider/model to use")
+	model = flag.String(
+		"model",
+		"openai/gpt-5-chat-latest",
+		"The provider/model to use. Overridden by history file",
+	)
 	apiKey      = flag.String("api-key", "", "The API key to use, as provider=api_key")
 	historyFile = flag.String("history-file", "", "Required. Read chat history from markdown file")
 	clear       = flag.Bool("c", false, "Clear history")
 	editor      = flag.Bool("editor", false, "Open history with $EDITOR")
-	system      = flag.String("system-prompt", "", "The LLM system prompt. Overridden by history file")
+	system      = flag.String(
+		"system-prompt",
+		"",
+		"The LLM system prompt. Overridden by history file",
+	)
 )
 
 func main() {
@@ -74,6 +82,12 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// If the model is specified in the history file, it takes precedence.
+	if convo.Model != "" {
+		*model = convo.Model
+	}
+
 	historyWriter := &history.MarkdownHistory{
 		OutputHandle: f,
 	}

@@ -24,8 +24,7 @@ type Ansi struct {
 	out      string
 }
 
-type Plain struct {
-}
+type Plain struct{}
 
 func (r *Plain) Print(s string) {
 	fmt.Print(s)

@@ -43,6 +43,7 @@ func (c ConversationTurn) String() string {
 }
 
 type Conversation struct {
+	Model    string
 	Messages []ConversationTurn
 }
 
