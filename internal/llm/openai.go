@@ -25,8 +25,9 @@ func (c *OpenaiClient) Respond(
 	stream := client.Chat.Completions.NewStreaming(
 		ctx,
 		openai.ChatCompletionNewParams{
-			Messages: c.destructureConversation(convo),
-			Model:    openai.ChatModel(c.Model),
+			Messages:        c.destructureConversation(convo),
+			Model:           openai.ChatModel(c.Model),
+			ReasoningEffort: "low",
 		},
 	)
 
