@@ -25,7 +25,7 @@ var (
 		"openai/gpt-5-chat-latest",
 		"The provider/model to use. Overridden by history file",
 	)
-	apiKey      = flag.String("api-key", "", "The API key to use, as provider=api_key")
+	apiKeys     = []string{} // Handled in main().
 	historyFile = flag.String("history-file", "", "Required. Read chat history from markdown file")
 	clear       = flag.Bool("c", false, "Clear history")
 	editor      = flag.Bool("editor", false, "Open history with $EDITOR")
@@ -37,6 +37,14 @@ var (
 )
 
 func main() {
+	flag.Func(
+		"api-key",
+		"The API key to use, as provider=api_key. Can be specified multiple times.",
+		func(s string) error {
+			apiKeys = append(apiKeys, s)
+			return nil
+		},
+	)
 	ctx := context.Background()
 	flag.Parse()
 	err := run(ctx)
@@ -52,7 +60,7 @@ func run(ctx context.Context) error {
 	if *clear {
 		os.Remove(*historyFile)
 	}
-	if *apiKey == "" {
+	if len(apiKeys) == 0 {
 		return errors.New("Missing api key")
 	}
 	if *editor {
@@ -110,7 +118,7 @@ func run(ctx context.Context) error {
 		historyWriter.Write(msg)
 	}
 
-	client, err := llm.NewLlmClient(*apiKey, *model)
+	client, err := llm.NewLlmClient(apiKeys, *model)
 	if err != nil {
 		return err
 	}

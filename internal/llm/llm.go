@@ -20,23 +20,22 @@ type ClientOptions struct {
 	Timeout time.Duration
 }
 
-func NewLlmClient(apiKey string, model string) (LlmClient, error) {
-	apiKeyProvider, key := parseSeparator(apiKey, "=")
-	modelProvider, mod := parseSeparator(model, "/")
-	if apiKeyProvider != modelProvider {
-		return nil, fmt.Errorf(
-			"mismatched model and api key provider: %q != %q\n",
-			apiKeyProvider,
-			modelProvider,
-		)
+func NewLlmClient(apiKeys []string, providerModel string) (LlmClient, error) {
+	modelProvider, model := parseSeparator(providerModel, "/")
+	var key string
+	for _, apiKey := range apiKeys {
+		if after, ok := strings.CutPrefix(apiKey, modelProvider+"="); ok {
+			key = after
+			break
+		}
 	}
-	if key == "" || mod == "" {
+	if key == "" || model == "" {
 		return nil, errors.New("missing api key or model")
 	}
 
 	defaultOptions := ClientOptions{
 		ApiKey:  key,
-		Model:   mod,
+		Model:   model,
 		Timeout: time.Second * 180,
 	}
 
