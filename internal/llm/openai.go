@@ -6,6 +6,7 @@ import (
 	"github.com/losnappas/go-chatgpt-cli/internal/conversation"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/shared"
 )
 
 type OpenaiClient struct {
@@ -33,7 +34,7 @@ func (c *OpenaiClient) Respond(
 		openai.ChatCompletionNewParams{
 			Messages:        c.destructureConversation(convo),
 			Model:           openai.ChatModel(c.Model),
-			ReasoningEffort: "low",
+			ReasoningEffort: shared.ReasoningEffort(c.ReasoningEffort),
 		},
 	)
 

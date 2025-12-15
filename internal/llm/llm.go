@@ -15,12 +15,17 @@ type LlmClient interface {
 }
 
 type ClientOptions struct {
-	ApiKey  string
-	Model   string
-	Timeout time.Duration
+	ApiKey          string
+	Model           string
+	Timeout         time.Duration
+	ReasoningEffort string
 }
 
-func NewLlmClient(apiKeys []string, providerModel string) (LlmClient, error) {
+func NewLlmClient(
+	apiKeys []string,
+	providerModel string,
+	reasoningEffort string,
+) (LlmClient, error) {
 	modelProvider, model := parseSeparator(providerModel, "/")
 	var key string
 	for _, apiKey := range apiKeys {
@@ -34,9 +39,10 @@ func NewLlmClient(apiKeys []string, providerModel string) (LlmClient, error) {
 	}
 
 	defaultOptions := ClientOptions{
-		ApiKey:  key,
-		Model:   model,
-		Timeout: time.Second * 180,
+		ApiKey:          key,
+		Model:           model,
+		Timeout:         time.Second * 180,
+		ReasoningEffort: reasoningEffort,
 	}
 
 	switch modelProvider {

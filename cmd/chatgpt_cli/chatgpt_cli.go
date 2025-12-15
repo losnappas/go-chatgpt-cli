@@ -34,6 +34,11 @@ var (
 		"",
 		"The LLM system prompt. Overridden by history file",
 	)
+	reasoningEffort = flag.String(
+		"reasoning-effort",
+		"",
+		"The reasoning effort to use. One of ['', 'low', 'medium', 'high'] (defaults to '')",
+	)
 )
 
 func main() {
@@ -118,7 +123,7 @@ func run(ctx context.Context) error {
 		historyWriter.Write(msg)
 	}
 
-	client, err := llm.NewLlmClient(apiKeys, *model)
+	client, err := llm.NewLlmClient(apiKeys, *model, *reasoningEffort)
 	if err != nil {
 		return err
 	}
